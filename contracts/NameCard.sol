@@ -4,7 +4,7 @@ contract NameCard{
     //mapping namecard address => bytes
     mapping(address => bytes) private _namecards;
     mapping(address => mapping(address => bool)) private _allowances;
-    event Apply(address sender , address received);
+    event Apply(address sender , address received,string message);
     function mintNameCard(bytes memory namecard) public {
         require(msg.sender!=address(0),"zero address");
         setNameCard(msg.sender,namecard);
@@ -15,9 +15,9 @@ contract NameCard{
     function setNameCard(address onwer,bytes memory data) private returns (bytes memory){
         return _namecards[onwer]=data;
     }
-    function applyForNameCard(address user) public  {
+    function applyForNameCard(address user,string memory message) public  {
        require(msg.sender!=address(0),"zero address");
-        emit Apply(msg.sender,user);
+        emit Apply(msg.sender,user,message);
     }
     function acceptApply(address user) public {
        require(msg.sender!=address(0),"zero address");
