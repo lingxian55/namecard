@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpRequest;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.crypto.SecretKey;
@@ -21,6 +22,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -50,8 +52,8 @@ public class NameCardController {
             try {
                 String code = s.subSequence(0, 6).toString();
                 emailService.sendCode(email, code);
-                redisTemplate.opsForValue().set("email@" + email,code,3000, TimeUnit.SECONDS);
-                redisTemplate.opsForValue().set("ip@" + remoteHost,"1",3000, TimeUnit.SECONDS);
+                redisTemplate.opsForValue().set("email@" + email,code,300, TimeUnit.SECONDS);
+                redisTemplate.opsForValue().set("ip@" + remoteHost,"1",300, TimeUnit.SECONDS);
             } catch (Exception e) {
                 e.printStackTrace();
                 return Result.Failed("发送失败:"+e.getMessage());
@@ -75,7 +77,7 @@ public class NameCardController {
             result.put("email",email);
             result.put("name",name);
             byte[] decrypt = AESUtil.encrypt(publicKey,JSONUtil.toJsonStr(result));
-            redisTemplate.opsForHash().put("address-key",address,publicKey);
+            redisTemplate.opsForHash().put("address-key",address.toLowerCase(Locale.ROOT),publicKey);
             return Result.Success("0x"+new  String(HexUtil.encodeHex(decrypt)));
         }else {
             return Result.Failed("验证码失效或错误");
@@ -83,13 +85,16 @@ public class NameCardController {
     }
     @PostMapping("getDeCyptData.json")
     public Result getDeCyptData(HttpServletRequest request, @RequestBody NameCardParam nameCardParam){
-        String publicKey= (String) redisTemplate.opsForHash().get("address-key",nameCardParam.getAddress());
+        String publicKey= (String) redisTemplate.opsForHash().get("address-key",nameCardParam.getAddress().toLowerCase(Locale.ROOT));
         String cryptData = nameCardParam.getEncryptData();
+        if(cryptData==null||cryptData.length()==0){
+            return Result.Failed("数据为空");
+        }
         if(cryptData.startsWith("0x")){
             cryptData=cryptData.replace("0x","");
         }
         if(publicKey!=null){
-            String decrypt = AESUtil.decrypt(publicKey,HexUtil.decodeHex(cryptData));
+            String decrypt = AESUtil.decrypt( publicKey,HexUtil.decodeHex(cryptData));
             return Result.Success(JSONUtil.toBean(decrypt,HashMap.class));
         }else {
             return Result.Failed("无公钥");

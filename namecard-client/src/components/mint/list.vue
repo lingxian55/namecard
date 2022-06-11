@@ -17,13 +17,13 @@
               </button>
             </el-form-item>
           </el-col>
-          <el-col :span="4" :offset="20">
+          <el-col :span="6" :offset="18">
             <el-form-item label="验证码:" >
               <el-input v-model="formdata.code" ></el-input>
             </el-form-item>
           </el-col>
           <el-col :span="24" v-if="showData">
-            加密数据: {{data}}
+            <div>加密数据: {{data}}</div>
           </el-col>
         </el-row>
       </el-form>
@@ -60,7 +60,6 @@ export default {
       publicKey: "",
       data: "",
       contract: {},
-      contractAddress: "0xf3f93F97868Bdfd7dDc2cC5a79Fd9E7491fFa856",
     }
   },
   methods: {
@@ -70,89 +69,10 @@ export default {
       }).catch(error => {
         console.log(error)
       })
-
     },
     initContract() {
-      let abi = [
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "user",
-              "type": "address"
-            }
-          ],
-          "name": "acceptApply",
-          "outputs": [],
-          "stateMutability": "nonpayable",
-          "type": "function"
-        },
-        {
-          "anonymous": false,
-          "inputs": [
-            {
-              "indexed": false,
-              "internalType": "address",
-              "name": "sender",
-              "type": "address"
-            },
-            {
-              "indexed": false,
-              "internalType": "address",
-              "name": "received",
-              "type": "address"
-            }
-          ],
-          "name": "Apply",
-          "type": "event"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "user",
-              "type": "address"
-            }
-          ],
-          "name": "applyForNameCard",
-          "outputs": [],
-          "stateMutability": "nonpayable",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "bytes",
-              "name": "namecard",
-              "type": "bytes"
-            }
-          ],
-          "name": "mintNameCard",
-          "outputs": [],
-          "stateMutability": "nonpayable",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "sender",
-              "type": "address"
-            }
-          ],
-          "name": "getUserNameCard",
-          "outputs": [
-            {
-              "internalType": "bytes",
-              "name": "",
-              "type": "bytes"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        }
-      ]
-      this.contract = new this.web3.eth.Contract(abi, this.contractAddress)
+      let abi = this.contracts.namecard.contractABI
+      this.contract = new this.web3.eth.Contract(abi, this.contracts.namecard.contractAddress)
     },
     getPublicKey() {
       window.ethereum.request({method: 'eth_requestAccounts'}).then(data => {
@@ -169,16 +89,6 @@ export default {
         return false;
       })
     },
-    initData() {
-      this.contract.methods.getNameCard(this.account).call(function (err, res) {
-        if (err) {
-          console.log("An error occured", err)
-          return
-        }
-        console.log("The balance is: ", res)
-      })
-
-    },
     mint() {
       this.Loading.open()
       window.ethereum.request({method: 'eth_requestAccounts'}).then(data => {
@@ -188,13 +98,15 @@ export default {
           this.publicKey = data
           this.formdata.publicKey=this.publicKey;
           this.axios.post("/nameCard/getEnCyptData.json",this.formdata).then(data=>{
-            if(data.data.code==1&&data.data){
-              this.contract.methods.mintNameCard(data.data).send({
+            console.log(data)
+            if(data.data&&data.data.code==1){
+              console.log(data.data.data)
+              this.contract.methods.mintNameCard(data.data.data).send({
                 from: this.account,
-                to: this.contractAddress
-              }).then(this.$message.success).catch(this.$message.error);
+                to: this.contracts.namecard.contractAddress
+              }).then(console.log).catch(console.log);
               this.showData=true
-              this.data=data.data
+              this.data=data.data.data
               this.Loading.close()
             }else {
               this.$message.error(data.data.msg)
@@ -242,6 +154,7 @@ export default {
         }else {
           this.$message.error(data.data.msg)
         }
+        this.Loading.close()
       }).catch(err=>{
         this.$message.error(err.msg)
         this.Loading.close()

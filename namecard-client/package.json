@@ -10,13 +10,14 @@
     "build": "node build/build.js"
   },
   "dependencies": {
-    "element-ui": "^2.15.8",
+    "axios": "^0.21.1",
+    "element-ui": "^2.15.9",
     "vue": "^2.5.2",
     "vue-router": "^3.0.1",
-    "web3": "1.2.9",
-    "axios": "^0.21.1"
+    "web3": "1.2.9"
   },
   "devDependencies": {
+    "@babel/plugin-syntax-dynamic-import": "^7.8.3",
     "autoprefixer": "^7.1.2",
     "babel-core": "^6.22.1",
     "babel-helper-vue-jsx-merge-props": "^2.0.3",

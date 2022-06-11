@@ -14,7 +14,7 @@
     </div>
     <div>
       <el-row :gutter="10" v-if="show" >
-          <el-col :span="12">姓名:{{name}}}</el-col>
+          <el-col :span="12">姓名:{{name}}</el-col>
           <el-col :span="12">邮箱:{{email}}</el-col>
       </el-row>
     </div>
@@ -32,16 +32,59 @@ export default {
         code:"",
         publicKey:"",
         address:"",
+        encryptData:""
       },
       show:false,
       name:"",
-      email:""
+      email:"",
+      contract:{},
+      account:""
     }
   },
   methods:{
     getDecryptData(){
+      this.Loading.open();
+      this.contract.methods.getUserNameCard(this.formdata.address).call({
+        from: this.account,
+        to: this.contractAddress
+      }).then(data=>{
+        console.log(data)
+        this.formdata.encryptData=data
+        this.axios.post("/nameCard/getDeCyptData.json",this.formdata).then(data=>{
+          if(data.data&&data.data.code==1){
+            this.name=data.data.data.name;
+            this.email=data.data.data.email;
+            this.show=true;
+          }else {
+            this.$message.error(data.data.msg)
+          }
+          this.Loading.close();
+        }).catch(err=>{
+          console.log(err)
+          this.Loading.close();
+        })
+      }).catch(error => {
+        console.log(error)
+        this.$message.error(error.toString())
+        this.Loading.close();
+      })
 
-    }
+    },
+    initContract() {
+      let abi = this.contracts.namecard.contractABI
+      this.contract = new this.web3.eth.Contract(abi, this.contracts.namecard.contractAddress)
+    },
+    getAccounts() {
+      window.ethereum.request({method: 'eth_requestAccounts'}).then(data => {
+        this.account = data[0];
+      }).catch(error => {
+        console.log(error)
+      })
+    },
+  },
+  mounted() {
+    this.initContract();
+    this.getAccounts();
   }
 }
 

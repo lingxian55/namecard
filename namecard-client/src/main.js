@@ -9,11 +9,13 @@ import Web3 from "web3";
 import axios from "axios";
 import config from "./config/config";
 import loading from "./config/Loading";
+import contracts from "./contracts";
 Vue.use(ElementUI)
 Vue.config.productionTip = false
 Vue.prototype.web3 =new Web3(window.ethereum);
 Vue.prototype.axios=axios.create(config)
 Vue.prototype.Loading=loading
+Vue.prototype.contracts=contracts
 
 /* eslint-disable no-new */
 new Vue({
